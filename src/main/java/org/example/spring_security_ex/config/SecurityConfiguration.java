@@ -41,7 +41,7 @@ public class SecurityConfiguration {
         http
                 .authorizeHttpRequests(
                         (auth) -> auth
-                                .requestMatchers("/", "/login", "/join", "joinProc").permitAll()
+                                .requestMatchers("/", "/login","/loginProc", "/join", "joinProc").permitAll()
                                 .requestMatchers("/admin").hasRole("ADMIN")
                                 .requestMatchers("/my/**").hasAnyRole("ADMIN", "USER")
                                 .anyRequest().authenticated()
@@ -53,11 +53,36 @@ public class SecurityConfiguration {
                                 .loginProcessingUrl("/loginProc") // 로그인 프로세싱 진행할 URL 전송
                                 .permitAll()
                 ); // 커스텀 로그인 진행하여서 Admin 페이지와 같은 페이지 접근시 권한없음 뜨던 것이 로그인 페이지롱 이동
+
+        //CSRF : 요청을 위조하여 사용자가 원치 않아도 서버측으로 강제로 요청을 보내는 방식
+        //disable 하지않으면 기본값은 enable
+        //enable 하기 위해서는 Csrf Token 을 관리해야한다.
+//        http.csrf((auth) -> auth.disable()); // 테스트를 위해 csrf 기능 끄기
+
+
+        // 다중 로그인 설정
         http
-                .csrf((auth) -> auth.disable()); // 테스트를 위해 csrf 기능 끄기
+                .sessionManagement((auth) -> auth
+                        .maximumSessions(1) // 다중 로그인 허용 범위
+                        .maxSessionsPreventsLogin(true) // 다중 로그인 개수를 초과하였을 경우 처리 방법
+                        //true : 초과시 로그인 차단 , flase : 초과시 기존 세션 하나 삭제
+                );
+
+        http
+                .sessionManagement((auth) -> auth
+//                        .sessionFixation().none() // 로그인 시 세션 정보 변경안함
+//                        .sessionFixation().newSession() // 로그인 시 세션 새로 생성
+                        .sessionFixation().changeSessionId() // 로그인시 동일한 세션에 대한 ID 변경
+                );
+
+        //로그아웃 진행
+        http
+                .logout((auth) -> auth.logoutUrl("/logout")
+                        .logoutSuccessUrl("/"));
 
         return http.build();
 
     }
+
 
 }

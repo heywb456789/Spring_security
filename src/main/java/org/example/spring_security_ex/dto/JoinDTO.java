@@ -8,6 +8,6 @@ import lombok.ToString;
 @Setter
 @ToString
 public class JoinDTO {
-    private String userName;
+    private String username;
     private String password;
 }
