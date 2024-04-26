@@ -2,9 +2,16 @@ package org.example.spring_security_ex.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -20,6 +27,17 @@ public class SecurityConfiguration {
     public BCryptPasswordEncoder passwordEncoder() {
 
         return new BCryptPasswordEncoder(); // 생성자를 리턴하여 자동으로 생성되도록 한다.
+    }
+
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+
+        RoleHierarchyImpl hierarchy = new RoleHierarchyImpl();
+
+        hierarchy.setHierarchy("ROLE_ADMIN > ROLE_USER\n" +
+                "ROLE_USER > ROLE_GUEST");
+
+        return hierarchy;
     }
 
     @Bean
@@ -46,6 +64,8 @@ public class SecurityConfiguration {
                                 .requestMatchers("/my/**").hasAnyRole("ADMIN", "USER")
                                 .anyRequest().authenticated()
                 );
+
+        //login form 방식
         http
                 .formLogin(
                         (auth) -> auth
@@ -54,10 +74,16 @@ public class SecurityConfiguration {
                                 .permitAll()
                 ); // 커스텀 로그인 진행하여서 Admin 페이지와 같은 페이지 접근시 권한없음 뜨던 것이 로그인 페이지롱 이동
 
+        /*
+        //http basic 인증방식
+        http
+                .httpBasic(Customizer.withDefaults());
+        */
+
         //CSRF : 요청을 위조하여 사용자가 원치 않아도 서버측으로 강제로 요청을 보내는 방식
         //disable 하지않으면 기본값은 enable
         //enable 하기 위해서는 Csrf Token 을 관리해야한다.
-//        http.csrf((auth) -> auth.disable()); // 테스트를 위해 csrf 기능 끄기
+        http.csrf((auth) -> auth.disable()); // 테스트를 위해 csrf 기능 끄기
 
 
         // 다중 로그인 설정
@@ -84,5 +110,23 @@ public class SecurityConfiguration {
 
     }
 
+    //InMemory 방식으로 특정 유저를 저장하여 관리
+    @Bean
+    public UserDetailsService userDetailsService() {
+
+        UserDetails user1 = User.builder()
+                .username("user1")
+                .password(passwordEncoder().encode("1234"))
+                .roles("ADMIN")
+                .build();
+
+        UserDetails user2 = User.builder()
+                .username("user2")
+                .password(passwordEncoder().encode("1234"))
+                .roles("USER")
+                .build();
+
+        return new InMemoryUserDetailsManager(user1, user2);
+    }
 
 }

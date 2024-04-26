@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Configuration
 public class AdminClass {
 
-    @GetMapping
+    @GetMapping("/admin")
     public String adminIndex() {
         return "adminIndex";
     }
